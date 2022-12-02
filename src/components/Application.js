@@ -1,51 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import 'components/Application.scss';
+import axios from 'axios';
 import DayList from './DayList';
 import Appointment from 'components/Appointment';
-import axios from 'axios';
-
-// Fake data
-
-const appointments = [
-  
-    {
-      id: 1,
-      time: '12pm',
-    },
-    {
-      id: 2,
-      time: '1pm',
-      interview: {
-        student: 'Lydia Miller-Jones',
-        interviewer:{
-          id: 3,
-          name: 'Sylvia Palmer',
-          avatar: 'https://i.imgur.com/LpaY82x.png',
-        }
-      }
-    },
-    {
-      id: 3,
-      time: '2pm',
-    },
-    {
-      id: 4,
-      time: '3pm',
-      interview: {
-        student: 'Archie Andrews',
-        interviewer:{
-          id: 4,
-          name: 'Cohana Roy',
-          avatar: 'https://i.imgur.com/FK8V841.jpg',
-        }
-      }
-    },
-    {
-      id: 5,
-      time: '4pm',
-    }
-  
-];
+import getAppointmentsForDay from 'helpers/selectors';
+import 'components/Application.scss';
 
 export default function Application(props) {
   const [state, setState] = useState({
@@ -55,13 +13,16 @@ export default function Application(props) {
   })
 
   const setDay = day => setState({ ...state, day});
-  const setDays = days => setState(prev => ({ ...prev, days}));
 
-  useEffect(() => {
-    axios
-      .get('/api/days')
-      .then(response => setDays(response.data));
-  })
+  useEffect (() => {
+    const promiseDays = axios.get('api/days');
+    const promiseAppointments = axios.get('/api/appointments');
+
+    Promise.all([promiseDays, promiseAppointments])
+      .then(all => {
+        setState(prev => ({ ...prev, days: all[0].data, appointments: all[1].data }))
+      })
+  }, [])
 
   return (
     <main className='layout'>
@@ -86,7 +47,7 @@ export default function Application(props) {
       />
       </section>
       <section className='schedule'>
-        {appointments.map(appointment => <Appointment key={appointment.id} {...appointment} />)}
+        {getAppointmentsForDay(state, state.day).map(appointment => <Appointment key={appointment.id} {...appointment} />)}
         <Appointment key='last' time='5pm' />
       </section>
     </main>
