@@ -39,4 +39,57 @@ describe('Application', () => {
     const day = getAllByTestId(container, 'day-item').find(day => queryByText(day, 'Monday'));
     expect(getByText(day, 'no spots remaining')).toBeInTheDocument();
   });
+
+  it('loads data, deletes an interview and increases the spots remaining for Monday by 1', async () => {
+    const { container } = render(<Application />);
+
+    await waitForElement(() => getByText(container, 'Archie Cohen'));
+
+    const appointment = getAllByTestId(container, 'appointment').find(
+      appointment => queryByText(appointment, 'Archie Cohen')
+      );
+    
+    fireEvent.click(getByAltText(appointment, 'Delete'));
+   
+    expect(
+      getByText(appointment, 'Are you sure you would like to delete?')
+      ).toBeInTheDocument();
+
+    fireEvent.click(queryByText(appointment, 'Confirm'));
+
+    expect(getByText(appointment, 'Deleting')).toBeInTheDocument();
+
+    await waitForElement(() => getByAltText(appointment, 'Add'));
+
+    const day = getAllByTestId(container, 'day-item').find(day => 
+      queryByText(day, 'Monday')
+      );
+
+    expect(getByText(day, '2 spots remaining')).toBeInTheDocument();
+  });
+
+  it('loads data, edits an interview and keeps the spots remaining for Monday the same', async () => {
+    const { container } = render(<Application />);
+
+    await waitForElement(() => getByText(container, 'Archie Cohen'));
+    const appointment = getAllByTestId(container, 'appointment').find(appointment => queryByText(appointment, 'Archie Cohen'));
+    fireEvent.click(getByAltText(appointment, 'Edit'));
+    fireEvent.change(getByPlaceholderText(appointment, 'Enter Student Name'), {
+      target: { value: 'Lydia Miller-Jones' }
+    });
+    fireEvent.click(getByText(appointment, 'Save'));
+    expect(getByText(appointment, 'Saving')).toBeInTheDocument();
+
+    await waitForElementToBeRemoved(() => getByText(appointment, 'Saving'));
+
+    expect(getByText(appointment, 'Lydia Miller-Jones')).toBeInTheDocument();
+    expect(getByAltText(appointment, 'Edit')).toBeInTheDocument();
+
+    const day = getAllByTestId(container, 'day-item').find(day => 
+      getByText(day, 'Monday')
+      );
+
+    expect(getByText(day, '1 spot remaining')).toBeInTheDocument();
+  });
+
 })
