@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, cleanup, waitForElement, fireEvent, getByText, prettyDOM, getByAltText, getAllByTestId, getByPlaceholderText, getAllByText } from '@testing-library/react';
+import { render, cleanup, waitForElement, fireEvent, getByText, queryByText, getByAltText, getAllByTestId, getByPlaceholderText, waitForElementToBeRemoved } from '@testing-library/react';
 import Application from 'components/Application';
 
 afterEach(cleanup);
@@ -24,12 +24,19 @@ describe('Application', () => {
     const appointment = appointments[0];
 
     fireEvent.click(getByAltText(appointment, 'Add'));
-    fireEvent.change(getByPlaceholderText(appointment, 'Enter Student Name'), {
+    fireEvent.change(getByPlaceholderText(appointment, /enter student name/i), {
       target: { value: 'Lydia Miller-Jones' }
     });
     fireEvent.click(getByAltText(appointment, 'Sylvia Palmer'));
     fireEvent.click(getByText(appointment, 'Save'));
 
-    console.log(prettyDOM(appointment));
+    expect(getByText(appointment, 'Saving')).toBeInTheDocument();
+
+    await waitForElementToBeRemoved(() => getByText(appointment, 'Saving'));
+    expect(getByText(appointment, 'Lydia Miller-Jones')).toBeInTheDocument();
+    expect(getByAltText(appointment, 'Edit')).toBeInTheDocument();
+
+    const day = getAllByTestId(container, 'day-item').find(day => queryByText(day, 'Monday'));
+    expect(getByText(day, 'no spots remaining')).toBeInTheDocument();
   });
 })
